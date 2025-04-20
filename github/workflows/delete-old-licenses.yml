@@ -15,7 +15,7 @@ jobs:
 
       - name: Delete license files older than 3 hours
         run: |
-          find licenses/ -type f -mmin +360 -print -delete
+          find licenses/ -type f -mmin +180 -print -delete
           echo "Old licenses deleted."
 
       - name: Commit changes
