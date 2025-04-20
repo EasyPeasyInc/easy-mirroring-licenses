@@ -2,8 +2,8 @@ name: Delete Old Licenses
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs every day at midnight UTC
-  workflow_dispatch:     # Allows manual runs too
+    - cron: '0 * * * *'  # Runs every hour
+  workflow_dispatch:     # Allows manual trigger
 
 jobs:
   clean_licenses:
@@ -13,9 +13,9 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v3
 
-      - name: Delete license files older than X days
+      - name: Delete license files older than 6 hours
         run: |
-          find licenses/ -type f -mtime +7 -print -delete
+          find licenses/ -type f -mmin +360 -print -delete
           echo "Old licenses deleted."
 
       - name: Commit changes
@@ -23,4 +23,4 @@ jobs:
         with:
           author_name: 'GitHub Actions'
           author_email: 'actions@github.com'
-          message: 'Auto-delete expired licenses'
+          message: 'Auto-delete licenses older than 6 hours'
