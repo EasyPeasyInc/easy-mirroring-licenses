@@ -13,10 +13,18 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v3
 
+      - name: Print files to be deleted
+        run: |
+          find . -type f -mmin +180 -print
+
       - name: Delete license files older than 3 hours
         run: |
           find . -type f -mmin +180 -print -delete
           echo "Old licenses deleted."
+
+      - name: Check git status
+        run: |
+          git status
 
       - name: Commit changes
         uses: EndBug/add-and-commit@v7
