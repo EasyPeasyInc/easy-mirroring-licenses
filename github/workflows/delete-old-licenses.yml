@@ -1,0 +1,26 @@
+name: Delete Old Licenses
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs every day at midnight UTC
+  workflow_dispatch:     # Allows manual runs too
+
+jobs:
+  clean_licenses:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Delete license files older than X days
+        run: |
+          find licenses/ -type f -mtime +7 -print -delete
+          echo "Old licenses deleted."
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v7
+        with:
+          author_name: 'GitHub Actions'
+          author_email: 'actions@github.com'
+          message: 'Auto-delete expired licenses'
