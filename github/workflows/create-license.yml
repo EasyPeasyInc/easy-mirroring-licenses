@@ -5,32 +5,20 @@ on:
     types: [create_license]
 
 jobs:
-  create_license:
+  generate_license:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: Get the user's email from the payload
-        id: get_email
+      - name: Create License File
         run: |
-          # Extract the email from the payload sent by Jotform
-          EMAIL=$(echo "${{ github.event.client_payload.form_email }}" | jq -r .email)
-          echo "User email: $EMAIL"
-          echo "EMAIL=$EMAIL" >> $GITHUB_ENV
-
-      - name: Generate License File
+          echo "LICENSE=OK" > licenses/${{ github.event.client_payload.form_email }}.txt
+          
+      - name: Push License File
         run: |
-          # Define the username from the extracted email
-          USERNAME="${{ env.EMAIL }}"
-          LICENSE_FILE="${USERNAME}.txt"
-
-          # Create the license file with the content "LICENSE=OK"
-          echo "LICENSE=OK" > "licenses/${LICENSE_FILE}"
-
-      - name: Commit the new license file
-        uses: EndBug/add-and-commit@v7
-        with:
-          author_name: 'GitHub Actions'
-          author_email: 'actions@github.com'
-          message: 'Create license file for ${{ github.event.client_payload.username }}'
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add licenses/
+          git commit -m "Add license for ${{ github.event.client_payload.form_email }}"
+          git push
