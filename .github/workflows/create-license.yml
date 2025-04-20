@@ -1,0 +1,29 @@
+name: Create License
+
+on:
+  repository_dispatch:
+    types: [create_license]
+
+jobs:
+  create_license:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create license file
+        run: |
+          EMAIL="${{ github.event.client_payload.form_email }}"
+          # ensure the licenses directory exists
+          mkdir -p licenses
+          # write the license content
+          echo "LICENSE=OK" > "licenses/${EMAIL}.txt"
+          echo "Created licenses/${EMAIL}.txt"
+
+      - name: Commit new license file
+        uses: EndBug/add-and-commit@v7
+        with:
+          author_name: 'GitHub Actions'
+          author_email: 'actions@github.com'
+          message: 'Add license for ${{ github.event.client_payload.form_email }}'
+          add: 'licenses/*'
