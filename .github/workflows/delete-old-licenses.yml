@@ -2,7 +2,7 @@ name: Auto‑Delete License Files After 3 Hours
 
 on:
   schedule:
-    - cron: '0 * * * *'    # every hour
+    - cron: '0 * * * *'    # runs hourly
   workflow_dispatch:      # manual trigger
 
 jobs:
@@ -13,24 +13,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: List all .txt files in repo root
+      - name: Delete license files older than 3 hours by commit date
         run: |
-          echo "=== All .txt files in repo root ==="
-          find . -maxdepth 1 -type f -name '*.txt' -print
+          # Compute threshold: UNIX timestamp for 3 hours ago
+          THRESHOLD=$(date -d '3 hours ago' +%s)
+          echo "Threshold (3h ago): $THRESHOLD"
 
-      - name: List .txt files older than 3 hours
-        run: |
-          echo "=== Candidate files (older than 3h) ==="
-          find . -maxdepth 1 -type f -name '*.txt' -mmin +180 -print || true
+          # Iterate over each .txt in the root
+          for file in *.txt; do
+            [ -f "$file" ] || continue
+            # Get the last commit timestamp for this file
+            CT=$(git log -1 --format=%ct -- "$file")
+            echo "$file last committed at $CT"
 
-      - name: Delete .txt files older than 3 hours
-        run: |
-          echo "=== Deleting old license files ==="
-          find . -maxdepth 1 -type f -name '*.txt' -mmin +180 -print -delete || true
-
-      - name: Show git status
-        run: |
-          git status
+            # If that commit is older than our threshold, delete it
+            if [ "$CT" -lt "$THRESHOLD" ]; then
+              echo "Deleting $file"
+              rm "$file"
+            fi
+          done
 
       - name: Commit & push deletions
         uses: EndBug/add-and-commit@v7
@@ -38,5 +39,4 @@ jobs:
           author_name: 'GitHub Actions'
           author_email: 'actions@github.com'
           message: 'Auto‑delete license files older than 3 hours'
-          add: '.'        # stage all changes (including deletions)
-
+          add: '*.txt'
