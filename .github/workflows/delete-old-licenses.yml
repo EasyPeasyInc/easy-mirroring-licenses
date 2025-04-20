@@ -13,9 +13,13 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v3
 
-      - name: Print files to be deleted
+      - name: Print all files in root directory
         run: |
-          find . -type f -mmin +180 -print
+          find . -type f -print
+
+      - name: Print files older than 3 hours (with modification time)
+        run: |
+          find . -type f -mmin +180 -exec ls -l {} \;
 
       - name: Delete license files older than 3 hours
         run: |
