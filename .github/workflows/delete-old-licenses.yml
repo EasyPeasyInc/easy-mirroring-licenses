@@ -1,38 +1,42 @@
-name: Delete Old Licenses
+name: Auto‑Delete License Files After 3 Hours
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Runs every hour
-  workflow_dispatch:     # Allows manual trigger
+    - cron: '0 * * * *'    # every hour
+  workflow_dispatch:      # manual trigger
 
 jobs:
-  clean_licenses:
+  cleanup:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Print all files in root directory
+      - name: List all .txt files in repo root
         run: |
-          find . -type f -print
+          echo "=== All .txt files in repo root ==="
+          find . -maxdepth 1 -type f -name '*.txt' -print
 
-      - name: Print files older than 3 hours (with modification time)
+      - name: List .txt files older than 3 hours
         run: |
-          find . -type f -mmin +180 -exec ls -l {} \;
+          echo "=== Candidate files (older than 3h) ==="
+          find . -maxdepth 1 -type f -name '*.txt' -mmin +180 -print || true
 
-      - name: Delete license files older than 3 hours
+      - name: Delete .txt files older than 3 hours
         run: |
-          find . -type f -mmin +180 -print -delete
-          echo "Old licenses deleted."
+          echo "=== Deleting old license files ==="
+          find . -maxdepth 1 -type f -name '*.txt' -mmin +180 -print -delete || true
 
-      - name: Check git status
+      - name: Show git status
         run: |
           git status
 
-      - name: Commit changes
+      - name: Commit & push deletions
         uses: EndBug/add-and-commit@v7
         with:
           author_name: 'GitHub Actions'
           author_email: 'actions@github.com'
-          message: 'Auto-delete licenses older than 3 hours'
+          message: 'Auto‑delete license files older than 3 hours'
+          add: '.'        # stage all changes (including deletions)
+
