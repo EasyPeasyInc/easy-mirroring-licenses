@@ -2,7 +2,7 @@ name: Auto‑Delete License Files After 3 Hours
 
 on:
   schedule:
-    - cron: '0 * * * *'    # runs hourly
+    - cron: '0 * * * *'    # runs every hour
   workflow_dispatch:      # manual trigger
 
 jobs:
@@ -10,33 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (full history)
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0      # important—get full commit history
 
-      - name: Delete license files older than 3 hours by commit date
+      - name: Debug: show files & commit dates
         run: |
-          # Compute threshold: UNIX timestamp for 3 hours ago
           THRESHOLD=$(date -d '3 hours ago' +%s)
           echo "Threshold (3h ago): $THRESHOLD"
+          echo "All .txt files and their last commit timestamps:"
+          for f in *.txt; do
+            [ -f "$f" ] || continue
+            CT=$(git log -1 --format=%ct -- "$f")
+            echo "  $f → $CT"
+          done
 
-          # Iterate over each .txt in the root
-          for file in *.txt; do
-            [ -f "$file" ] || continue
-            # Get the last commit timestamp for this file
-            CT=$(git log -1 --format=%ct -- "$file")
-            echo "$file last committed at $CT"
-
-            # If that commit is older than our threshold, delete it
+      - name: Delete old license files
+        run: |
+          THRESHOLD=$(date -d '3 hours ago' +%s)
+          for f in *.txt; do
+            [ -f "$f" ] || continue
+            CT=$(git log -1 --format=%ct -- "$f")
             if [ "$CT" -lt "$THRESHOLD" ]; then
-              echo "Deleting $file"
-              rm "$file"
+              echo "Deleting $f (last commit $CT)"
+              rm "$f"
             fi
           done
 
       - name: Commit & push deletions
-        uses: EndBug/add-and-commit@v7
-        with:
-          author_name: 'GitHub Actions'
-          author_email: 'actions@github.com'
-          message: 'Auto‑delete license files older than 3 hours'
-          add: '*.txt'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add -A                          # stage deletions too
+          git commit -m "Auto‑delete license files older than 3h" || echo "No files to delete"
+          git push                            # push only if commit succeeded
